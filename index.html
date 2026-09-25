@@ -127,10 +127,12 @@ textarea.input{resize:vertical;line-height:1.6}
 <script>
 /* ============ 配置区 ============ */
 const SUPABASE_URL = 'https://tsocuvathnjbyjgehebi.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzb2N1dmF0aG5qYnlqZ2VoZWJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAzNDkxMzksImV4cCI6MjEwNTkyNTEzOX0.0q5dy39r0ThJmPE400sDS8J07hOhw82TjiFb5UCvgmQ';
+const SUPABASE_KEY = 'REPLACE_WITH_ANON_KEY';
 /* ================================= */
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = (SUPABASE_URL && SUPABASE_KEY && SUPABASE_KEY !== 'REPLACE_WITH_ANON_KEY')
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+  : null;
 
 let db = { admin:null, roles:[], tasks:[] };
 let ready = false;
@@ -146,7 +148,7 @@ function defaultDeadline(){
 }
 
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
-function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
 function val(id){ const el=document.getElementById(id); return el?el.value:''; }
 function setErr(id,msg){ const el=document.getElementById(id); if(el) el.textContent = msg||''; }
 function hashPwd(pw){
@@ -182,11 +184,20 @@ function roleStats(rid){
   return r;
 }
 
+function showError(message){
+  document.getElementById('app').innerHTML =
+    '<div class="wrap"><div class="card empty">⚠️ ' + esc(message) + '<br><span class="small">请检查 Supabase URL / anon key 是否已正确配置</span></div></div>';
+}
+
 async function loadDB(){
   try{
+    if(!supabase){
+      throw new Error('未配置 Supabase 的 anon key。请在页面顶部把 SUPABASE_KEY 改成真实值。');
+    }
     const { data, error } = await supabase.from('taskcontract').select('data').eq('id',1).single();
-    if(error) throw error;
-    const d = data && data.data ? data.data : {};
+    if(error && error.code !== 'PGRST116') throw error;
+
+    const d = data && data.data ? data.data : { admin:null, roles:[], tasks:[] };
     db = {
       admin: d.admin || null,
       roles: Array.isArray(d.roles) ? d.roles : [],
@@ -195,20 +206,21 @@ async function loadDB(){
     ready = true;
   }catch(e){
     console.error(e);
-    document.getElementById('app').innerHTML =
-      '<div class="wrap"><div class="card empty">⚠️ 连接数据库失败<br><span class="small">' + esc(e.message) + '<br>请检查 SUPABASE_URL / SUPABASE_KEY 是否正确</span></div></div>';
+    ready = false;
+    showError(e.message || '连接数据库失败');
     throw e;
   }
 }
+
 async function saveDB(){
   try{
+    if(!supabase){ throw new Error('未配置 Supabase'); }
     const { error } = await supabase.from('taskcontract')
-      .update({ data: db, updated_at: new Date().toISOString() })
-      .eq('id', 1);
+      .upsert({ id:1, data: db, updated_at: new Date().toISOString() }, { onConflict: 'id' });
     if(error) throw error;
   }catch(e){
     console.error(e);
-    alert('保存失败：' + e.message);
+    alert('保存失败：' + (e.message || '未知错误'));
   }
 }
 
@@ -237,7 +249,7 @@ function renderHome(){
     +     '<div class="brand">📋 任务契约</div>'
     +     '<div class="row gap">'
     +       '<button class="btn ghost sm" onclick="refresh()">↻ 刷新</button>'
-    +       '<button class="btn ghost sm" onclick="openAdmin()">🔐 ' + (isAdmin?'管理面板':'管理员') + '</button>'
+    +       '<button class="btn ghost sm" onclick="openAdmin()">🔐 ' + (isAdmin ? '管理面板' : '管理员') + '</button>'
     +     '</div>'
     +   '</div>'
     +   '<header class="hero"><h1>选择你的身份</h1><p>点击你的名字，自动接取分配给你的任务</p></header>';
@@ -262,8 +274,10 @@ function renderHome(){
 }
 
 async function refresh(){
-  await loadDB();
-  render();
+  try{
+    await loadDB();
+    render();
+  }catch(e){}
 }
 
 function renderRole(){
@@ -423,7 +437,10 @@ function renderAdmin(){
 function switchTab(t){
   adminTab = t;
   const tabs = document.querySelectorAll('.tab');
-  ['tasks','roles','data'].forEach((k,i)=>{ if(tabs[i]) tabs[i].className = 'tab ' + (t===k?'on':''); = });
+  tabs.forEach((tab, index)=>{
+    const k = ['tasks','roles','data'][index];
+    tab.className = 'tab ' + (t===k ? 'on' : '');
+  });
   renderTab();
 }
 
@@ -438,8 +455,8 @@ function renderTasksTab(){
   const roles = db.roles;
   const chips = roles.length
     ? roles.map(r=>{
-        const on draft.targets.indexOf(r.id) >= 0;
-        return '<label class="chip"><input type="checkbox" ' + (on?'checked':'') +
+        const isSelected = draft.targets.includes(r.id);
+        return '<label class="chip"><input type="checkbox" ' + (isSelected ? 'checked' : '') +
                ' onchange="toggleTarget(\''+r.id+'\',this.checked)"> ' +
                esc(r.emoji||'🙂') + ' ' + esc(r.name) + '</label>';
       }).join('')
@@ -719,7 +736,9 @@ setInterval(()=>{
   try{
     await loadDB();
     render();
-  }catch(e){}
+  }catch(e){
+    console.error(e);
+  }
 })();
 </script>
 </body>

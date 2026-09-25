@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>任务契约</title>
+<style>
+:root{
+  --line:#232c42;--text:#e8edf7;--muted:#8b97b4;
+  --acc:#5eead4;--acc2:#818cf8;--danger:#f87171;--warn:#fbbf24;--ok:#34d399;
+  --card:rgba(20,26,41,.86);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--text);min-height:100vh;padding:20px 16px 70px;
+  -webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(900px 520px at 8% -8%, rgba(129,140,248,.18), transparent 60%),
+    radial-gradient(820px 500px at 100% 0%, rgba(94,234,212,.10), transparent 55%),
+    #0a0e17;
+  background-attachment:fixed;
+}
+.wrap{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0;flex-wrap:wrap}
+.brand{font-weight:800;letter-spacing:.5px;font-size:16px}
+.row{display:flex;align-items:center;gap:8px}
+.gap{gap:10px}.small{font-size:12.5px}.muted{color:var(--muted)}
+.hero h1{font-size:30px;line-height:1.25;margin-bottom:8px;
+  background:linear-gradient(92deg,#5eead4,#818cf8 70%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;}
+.hero p{color:var(--muted);font-size:14.5px}
+.role-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.role-card{display:flex;flex-direction:column;align-items:center;gap:7px;
+  padding:22px 14px;border-radius:18px;cursor:pointer;font-family:inherit;
+  background:linear-gradient(180deg,rgba(27,35,54,.92),rgba(15,21,33,.92));
+  border:1px solid var(--line);color:var(--text);
+  transition:transform .2s ease, border-color .2s ease, box-shadow .2s ease;}
+.role-card:hover{transform:translateY(-3px);border-color:rgba(94,234,212,.55);box-shadow:0 14px 34px -14px rgba(94,234,212,.45)}
+.avatar{font-size:34px;line-height:1}
+.avatar.sm{font-size:20px}
+.rname{font-weight:700;font-size:15.5px}
+.rstat{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.dot{width:7px;height:7px;border-radius:50%;background:#3a465f;display:inline-block}
+.dot.on{background:var(--acc);box-shadow:0 0 8px rgba(94,234,212,.8)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;
+  backdrop-filter:blur(6px);animation:pop .25s ease both;}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.card.empty{text-align:center;color:var(--muted);padding:34px 18px;line-height:1.9;font-size:14px}
+.sec-title{font-size:14px;color:var(--muted);font-weight:700;margin:6px 2px 0}
+.task{border-left:3px solid var(--acc)}
+.task.done{border-left-color:var(--ok);opacity:.78}
+.task.failed{border-left-color:var(--danger);opacity:.85}
+.task-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.task-head h3{font-size:16.5px;line-height:1.4}
+.desc{color:#b9c3d8;font-size:13.5px;line-height:1.7;margin-top:8px;white-space:pre-wrap;word-break:break-word}
+.cd{font-size:16.5px;font-weight:800;font-variant-numeric:tabular-nums;
+  padding:11px 13px;border-radius:11px;margin:12px 0 10px;
+  background:rgba(94,234,212,.08);color:#5eead4;border:1px solid rgba(94,234,212,.22);}
+.cd.urgent{color:var(--warn);background:rgba(251,191,36,.10);border-color:rgba(251,191,36,.32);animation:blink 1.1s infinite}
+@keyframes blink{50%{opacity:.55}}
+.cd.expired{color:var(--danger);background:rgba(248,113,113,.10);border-color:rgba(248,113,113,.32)}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.pill{font-size:12.5px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:#141a29;color:#c6d0e4}
+.pill.reward{border-color:rgba(52,211,153,.35);color:#6ee7b7;background:rgba(52,211,153,.08)}
+.pill.penalty{border-color:rgba(248,113,113,.35);color:#fca5a5;background:rgba(248,113,113,.08)}
+.pill.time{border-color:rgba(129,140,248,.35);color:#a5b4fc;background:rgba(129,140,248,.08)}
+.badge{font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;white-space:nowrap}
+.badge.live{background:rgba(94,234,212,.12);color:#5eead4;border:1px solid rgba(94,234,212,.3)}
+.badge.ok{background:rgba(52,211,153,.12);color:#6ee7b7;border:1px solid rgba(52,211,153,.3)}
+.badge.bad{background:rgba(248,113,113,.12);color:#fca5a5;border:1px solid rgba(248,113,113,.3)}
+.btn{appearance:none;font-family:inherit;font-size:14px;font-weight:600;
+  padding:10px 16px;border-radius:10px;cursor:pointer;
+  background:#1b2336;color:var(--text);border:1px solid var(--line);transition:.18s;}
+.btn:hover{background:#22304a;transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn.primary{background:linear-gradient(135deg,#5eead4,#818cf8);border:none;color:#08111f}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.35);color:#fca5a5}
+.btn.ghost{background:transparent}
+.btn.sm{padding:6px 11px;font-size:12.5px;border-radius:8px}
+.btn.block{display:block;width:100%}
+.ok-btn{background:rgba(52,211,153,.14);border-color:rgba(52,211,153,.4);color:#6ee7b7;margin-top:14px}
+label{display:block;font-size:12.5px;color:var(--muted);margin:14px 0 6px;font-weight:600}
+.input{width:100%;background:#0f1521;border:1px solid var(--line);color:var(--text);
+  padding:11px 13px;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:.18s;}
+.input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(94,234,212,.12)}
+textarea.input{resize:vertical;line-height:1.6}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.err{color:#fca5a5;font-size:13px;margin-top:10px;display:none}
+.err:not(:empty){display:block}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;cursor:pointer;
+  padding:8px 13px;border-radius:999px;font-size:13.5px;
+  background:#141a29;border:1px solid var(--line);color:#c6d0e4;transition:.16s;user-select:none;}
+.chip input{display:none}
+.chip:has(input:checked){background:rgba(94,234,212,.12);border-color:rgba(94,234,212,.55);color:#5eead4;font-weight:700}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 10px;text-align:center}
+.stat b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.tabs{display:flex;gap:6px;background:#101725;border:1px solid var(--line);padding:5px;border-radius:13px;width:fit-content}
+.tab{appearance:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;
+  padding:9px 20px;border-radius:9px;border:none;background:transparent;color:var(--muted);transition:.18s;}
+.tab.on{background:linear-gradient(135deg,#5eead4,#818cf8);color:#08111f}
+.list-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:12px 0;border-bottom:1px dashed #1f2739;}
+.list-row:last-child{border-bottom:none}
+.grow{flex:1;min-width:120px}
+.targets{margin-top:12px;border-top:1px solid #1c2434;padding-top:4px}
+.foot{text-align:center;color:var(--muted);font-size:12px;margin-top:14px;line-height:1.9}
+.danger-zone{border-color:rgba(248,113,113,.28)}
+.loading{text-align:center;padding:60px 20px;color:var(--muted);font-size:14px}
+@media (max-width:560px){
+  body{padding:16px 12px 60px}
+  .hero h1{font-size:24px}
+  .grid2{grid-template-columns:1fr}
+  .role-grid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr))}
+  .stat b{font-size:19px}
+}
+</style>
+</head>
+<body>
+<div id="app"><div class="loading">正在连接…</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ============ 配置区：改成你自己的 ============ */
+const SUPABASE_URL = 'https://project/tsocuvathnjbyjgehebi/settings/api-keys/legacy.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzb2N1dmF0aG5qYnlqZ2VoZWJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAzNDkxMzksImV4cCI6MjEwNTkyNTEzOX0.0q5dy39r0ThJmPE400sDS8J07hOhw82TjiFb5UCvgmQ';
+/* ============================================ */
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ============ 状态 ============ */
+let db = { admin:null, roles:[], tasks:[] };
+let ready = false;
+let isAdmin = false;
+let adminTab = 'tasks';
+let view = { name:'home', roleId:null };
+let draft = { title:'', desc:'', deadline: defaultDeadline(), reward:'', penalty:'', targets:[] };
+
+function defaultDeadline(){
+  const d = new Date(Date.now() + 86400000);
+  const p = n => String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':00';
+}
+
+/* ============ 工具 ============ */
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function val(id){ const el=document.getElementById(id); return el?el.value:''; }
+function setErr(id,msg){ const el=document.getElementById(id); if(el) el.textContent = msg||''; }
+function hashPwd(pw){
+  const s = 'tc$' + pw + '$2026';
+  let h1 = 0x811c9dc5, h2 = 0xdeadbeef;
+  for(let i=0;i<s.length;i++){ h1 = Math.imul(h1 ^ s.charCodeAt(i), 16777619) >>> 0; }
+  for(let i=s.length-1;i>=0;i--){ h2 = Math.imul(h2 ^ s.charCodeAt(i), 2654435761) >>> 0; }
+  return (h1>>>0).toString(16).padStart(8,'0') + (h2>>>0).toString(16).padStart(8,'0');
+}
+function fmtDateTime(ts){
+  if(!ts) return '—';
+  const d = new Date(ts), p = n => String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+}
+function remainText(ms){
+  if(ms<=0) return '已超时';
+  const s = Math.floor(ms/1000);
+  const d = Math.floor(s/86400), h = Math.floor(s%86400/3600), m = Math.floor(s%3600/60), sec = s%60;
+  if(d>0) return d+' 天 '+h+' 小时 '+m+' 分';
+  if(h>0) return h+' 小时 '+m+' 分 '+sec+' 秒';
+  if(m>0) return m+' 分 '+sec+' 秒';
+  return sec+' 秒';
+}
+function roleStats(rid){
+  const r = { active:0, done:0, failed:0 };
+  db.tasks.forEach(t => {
+    const s = t.targets[rid];
+    if(!s) return;
+    if(s.status==='active') r.active++;
+    else if(s.status==='done') r.done++;
+    else r.failed++;
+  });
+  return r;
+}
+
+/* ============ 数据层 ============ */
+async function loadDB(){
+  try{
+    const { data, error } = await supabase.from('taskcontract').select('data').eq('id',1).single();
+    if(error) throw error;
+    const d = data && data.data ? data.data : {};
+    db = {
+      admin: d.admin || null,
+      roles: Array.isArray(d.roles) ? d.roles : [],
+      tasks: Array.isArray(d.tasks) ? d.tasks : []
+    };
+    ready = true;
+  }catch(e){
+    console.error(e);
+    document.getElementById('app').innerHTML =
+      '<div class="wrap"><div class="card empty">⚠️ 连接数据库失败<br><span class="small">' + esc(e.message) + '<br>请检查 SUPABASE_URL / SUPABASE_KEY 是否正确</span></div></div>';
+    throw e;
+  }
+}
+async function saveDB(){
+  try{
+    const { error } = await supabase.from('taskcontract')
+      .update({ data: db, updated_at: new Date().toISOString() })
+      .eq('id', 1);
+    if(error) throw error;
+  }catch(e){
+    console.error(e);
+    alert('保存失败：' + e.message);
+  }
+}
+
+/* ============ 渲染入口 ============ */
+const app = document.getElementById('app');
+function render(){
+  if(!ready) return;
+  if(view.name==='home') renderHome();
+  else if(view.name==='role') renderRole();
+  else if(view.name==='login') renderLogin();
+  else if(view.name==='admin') renderAdmin();
+}
+function goHome(){ view={name:'home',roleId:null}; render(); window.scrollTo(0,0); }
+function openRole(id){ view={name:'role',roleId:id}; render(); window.scrollTo(0,0); }
+function openLogin(){ view={name:'login',roleId:null}; render(); window.scrollTo(0,0); }
+function openAdmin(){
+  if(isAdmin){ adminTab='tasks'; view={name:'admin'}; render(); window.scrollTo(0,0); }
+  else openLogin();
+}
+
+/* ============ 首页 ============ */
+function renderHome(){
+  view = { name:'home', roleId:null };
+  const roles = db.roles;
+  let html = ''
+    + '<div class="wrap">'
+    +   '<div class="topbar">'
+    +     '<div class="brand">📋 任务契约</div>'
+    +     '<div class="row gap">'
+    +       '<button class="btn ghost sm" onclick="refresh()">↻ 刷新</button>'
+    +       '<button class="btn ghost sm" onclick="openAdmin()">🔐 ' + (isAdmin?'管理面板':'管理员') + '</button>'
+    +     '</div>'
+    +   '</div>'
+    +   '<header class="hero"><h1>选择你的身份</h1><p>点击你的名字，自动接取分配给你的任务</p></header>';
+
+  if(roles.length){
+    html += '<div class="role-grid">';
+    roles.forEach(r=>{
+      const s = roleStats(r.id);
+      html += '<button class="role-card" onclick="openRole(\'' + r.id + '\')">'
+        + '<div class="avatar">' + esc(r.emoji||'🙂') + '</div>'
+        + '<div class="rname">' + esc(r.name) + '</div>'
+        + '<div class="rstat">' + (s.active ? '<span class="dot on"></span>进行中 '+s.active : '<span class="dot"></span>暂无进行中') + '</div>'
+        + (s.done ? '<div class="small muted">已完成 '+s.done+'</div>' : '')
+        + '</button>';
+    });
+    html += '</div>';
+  }else{
+    html += '<div class="card empty">管理员还没有添加成员<br><span class="small">点击右上角「管理员」登录后添加</span></div>';
+  }
+  html += '<p class="foot">数据云端同步 · 所有人看到的是同一份内容</p></div>';
+  app.innerHTML = html;
+}
+
+async function refresh(){
+  await loadDB();
+  render();
+}
+
+/* ============ 成员任务页 ============ */
+function renderRole(){
+  const r = db.roles.find(x=>x.id===view.roleId);
+  if(!r){ goHome(); return; }
+  const order = { active:0, failed:1, done:2 };
+  const tasks = db.tasks
+    .filter(t => !!t.targets[r.id])
+    .sort((a,b)=>{
+      const sa = order[a.targets[r.id].status], sb = order[b.targets[r.id].status];
+      if(sa!==sb) return sa-sb;
+      return a.deadline-b.deadline;
+    });
+  const s = roleStats(r.id);
+
+  let html = ''
+    + '<div class="wrap">'
+    +   '<div class="topbar">'
+    +     '<button class="btn ghost sm" onclick="goHome()">← 换身份</button>'
+    +     '<div class="brand">' + esc(r.emoji||'🙂') + ' ' + esc(r.name) + '</div>'
+    +     '<button class="btn ghost sm" onclick="refresh()">↻</button>'
+    +   '</div>'
+    +   '<div class="stats">'
+    +     '<div class="stat"><b style="color:#5eead4">' + s.active + '</b><span>进行中</span></div>'
+    +     '<div class="stat"><b style="color:#6ee7b7">' + s.done + '</b><span>已完成</span></div>'
+    +     '<div class="stat"><b style="color:#fca5a5">' + s.failed + '</b><span>失败 / 超时</span></div>'
+    +   '</div>';
+
+  if(tasks.length){
+    tasks.forEach(t => html += renderTaskCard(t, r.id));
+  }else{
+    html += '<div class="card empty">暂时没有分配给你的任务 🎉</div>';
+  }
+  html += '<p class="foot">任务已自动接取 · 请在截止时间前点击「我完成了」</p></div>';
+  app.innerHTML = html;
+}
+
+function renderTaskCard(t, rid){
+  const st = t.targets[rid];
+  const cls = st.status==='done' ? 'done' : (st.status==='failed' ? 'failed' : '');
+  const badge = st.status==='done'
+    ? '<span class="badge ok">已完成</span>'
+    : (st.status==='failed' ? '<span class="badge bad">已失败</span>' : '<span class="badge live">进行中</span>');
+
+  const left = t.deadline - Date.now();
+  let cdText;
+  if(st.status==='active') cdText = left>0 ? '⏳ 剩余 '+remainText(left) : '⚠️ 已超时';
+  else if(st.status==='done') cdText = '✅ 于 '+fmtDateTime(st.doneAt)+' 完成';
+  else cdText = '❌ 已超时 · 惩罚生效';
+
+  return '<div class="card task ' + cls + '">'
+    + '<div class="task-head"><h3>' + esc(t.title) + '</h3>' + badge + '</div>'
+    + (t.desc ? '<p class="desc">' + esc(t.desc) + '</p>' : '')
+    + '<div class="cd" data-deadline="' + t.deadline + '" data-status="' + st.status + '">' + cdText + '</div>'
+    + '<div class="meta">'
+    +   (t.reward ? '<span class="pill reward">🎁 奖励 · '+esc(t.reward)+'</span>' : '')
+    +   (t.penalty ? '<span class="pill penalty">⚡ 惩罚 · '+esc(t.penalty)+'</span>' : '')
+    +   '<span class="pill time">🕐 截止 '+fmtDateTime(t.deadline)+'</span>'
+    + '</div>'
+    + (st.status==='active' ? '<button class="btn ok-btn" onclick="markDone(\''+t.id+'\',\''+rid+'\')">✔ 我完成了</button>' : '')
+    + '</div>';
+}
+
+async function markDone(tid, rid){
+  const t = db.tasks.find(x=>x.id===tid);
+  if(!t) return;
+  if(Date.now() > t.deadline){ alert('已超过截止时间，无法标记完成'); return; }
+  if(!confirm('确认已经完成这个任务？')) return;
+  t.targets[rid].status = 'done';
+  t.targets[rid].doneAt = Date.now();
+  await saveDB();
+  renderRole();
+}
+
+/* ============ 登录 / 注册（唯一管理员） ============ */
+function renderLogin(){
+  view = { name:'login', roleId:null };
+  const hasAdmin = !!db.admin;
+  app.innerHTML = ''
+    + '<div class="wrap">'
+    +   '<div class="topbar">'
+    +     '<button class="btn ghost sm" onclick="goHome()">← 返回</button>'
+    +     '<div class="brand">管理员</div>'
+    +   '</div>'
+    +   '<div class="card">'
+    +     '<h3 style="font-size:18px">' + (hasAdmin ? '管理员登录' : '创建管理员账号') + '</h3>'
+    +     '<p class="small muted" style="margin-top:6px">' + (hasAdmin ? '输入账号密码进入管理面板' : '首次使用，请设置唯一的管理员账号（只有这一次注册机会）') + '</p>'
+    +     '<label>用户名</label>'
+    +     '<input id="u" class="input" placeholder="例如 admin" autocomplete="username">'
+    +     '<label>密码</label>'
+    +     '<input id="p" type="password" class="input" placeholder="至少 4 位" autocomplete="current-password">'
+    +     (hasAdmin ? '' : '<label>确认密码</label><input id="p2" type="password" class="input" placeholder="再输入一次">')
+    +     '<div id="err" class="err"></div>'
+    +     '<button class="btn primary block" style="margin-top:18px" onclick="' + (hasAdmin ? 'doLogin()' : 'doRegister()') + '">'
+    +       (hasAdmin ? '登 录' : '注册并进入')
+    +     '</button>'
+    +     (hasAdmin ? '<p class="small muted" style="margin-top:14px;line-height:1.8">忘记密码？在 Supabase 控制台把 taskcontract 表 id=1 那行的 data.admin 改为 null 即可重置</p>' : '')
+    +   '</div>'
+    + '</div>';
+}
+
+async function doRegister(){
+  const u = val('u').trim(), p = val('p'), p2 = val('p2');
+  if(u.length < 2) return setErr('err', '用户名至少 2 个字符');
+  if(p.length < 4) return setErr('err', '密码至少 4 位');
+  if(p !== p2) return setErr('err', '两次输入的密码不一致');
+
+  // 重新拉一次，防止别人在你之前已经注册了
+  await loadDB();
+  if(db.admin) return setErr('err', '管理员已存在，无法重复注册');
+
+  db.admin = { username: u, hash: hashPwd(p) };
+  await saveDB();
+  isAdmin = true;
+  adminTab = 'tasks';
+  alert('注册成功，已进入管理面板');
+  view = { name:'admin' };
+  render();
+}
+
+async function doLogin(){
+  const u = val('u').trim(), p = val('p');
+  await loadDB();
+  if(!db.admin) return setErr('err', '还没有管理员账号，请刷新页面重新注册');
+  if(u !== db.admin.username || hashPwd(p) !== db.admin.hash){
+    return setErr('err', '用户名或密码不正确');
+  }
+  isAdmin = true;
+  adminTab = 'tasks';
+  view = { name:'admin' };
+  render();
+  window.scrollTo(0,0);
+}
+
+function doLogout(){ isAdmin = false; goHome(); }
+
+/* ============ 管理面板 ============ */
+function renderAdmin(){
+  if(!isAdmin){ openLogin(); return; }
+  view = { name:'admin', roleId:null };
+  app.innerHTML = ''
+    + '<div class="wrap">'
+    +   '<div class="topbar">'
+    +     '<div class="brand">⚙️ 管理面板</div>'
+    +     '<div class="row gap">'
+    +       '<span class="small muted">' + esc(db.admin?db.admin.username:'') + '</span>'
+    +       '<button class="btn ghost sm" onclick="doLogout()">退出</button>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="tabs">'
+    +     '<button class="tab ' + (adminTab==='tasks'?'on':'') + '" onclick="switchTab(\'tasks\')">任务</button>'
+    +     '<button class="tab ' + (adminTab==='roles'?'on':'') + '" onclick="switchTab(\'roles\')">成员</button>'
+    +     '<button class="tab ' + (adminTab==='data'?'on':'')  + '" onclick="switchTab(\'data\')">数据</button>'
+    +   '</div>'
+    +   '<div id="tabBody"></div>'
+    + '</div>';
+  renderTab();
+}
+
+function switchTab(t){
+  adminTab = t;
+  const tabs = document.querySelectorAll('.tab');
+  ['tasks','roles','data'].forEach((k,i)=>{ if(tabs[i]) tabs[i].className = 'tab ' + (t===k?'on':''); });
+  renderTab();
+}
+
+function renderTab(){
+  if(adminTab==='tasks') renderTasksTab();
+  else if(adminTab==='roles') renderRolesTab();
+  else renderDataTab();
+}
+
+/* 任务 tab */
+function renderTasksTab(){
+  const body = document.getElementById('tabBody');
+  const roles = db.roles;
+  const chips = roles.length
+    ? roles.map(r=>{
+        const on = draft.targets.indexOf(r.id) >= 0;
+        return '<label class="chip"><input type="checkbox" ' + (on?'checked':'') +
+               ' onchange="toggleTarget(\''+r.id+'\',this.checked)"> ' +
+               esc(r.emoji||'🙂') + ' ' + esc(r.name) + '</label>';
+      }).join('')
+    : '<span class="small muted">还没有成员，请先到「成员」添加</span>';
+
+  body.innerHTML = ''
+    + '<div class="card">'
+    +   '<h3 style="font-size:16.5px">发布新任务</h3>'
+    +   '<label>任务标题 *</label>'
+    +   '<input id="f-title" class="input" value="' + esc(draft.title) + '" oninput="draft.title=this.value" placeholder="例如：周五前提交项目周报">'
+    +   '<label>任务说明</label>'
+    +   '<textarea id="f-desc" class="input" rows="3" oninput="draft.desc=this.value" placeholder="具体要求、交付标准…">' + esc(draft.desc) + '</textarea>'
+    +   '<div class="grid2">'
+    +     '<div><label>截止时间 *</label>'
+    +       '<input id="f-dl" type="datetime-local" class="input" value="' + esc(draft.deadline) + '" oninput="draft.deadline=this.value"></div>'
+    +     '<div><label>奖励</label>'
+    +       '<input id="f-rw" class="input" value="' + esc(draft.reward) + '" oninput="draft.reward=this.value" placeholder="例如：奶茶一杯"></div>'
+    +   '</div>'
+    +   '<label>惩罚</label>'
+    +   '<input id="f-pn" class="input" value="' + esc(draft.penalty) + '" oninput="draft.penalty=this.value" placeholder="例如：做 30 个俯卧撑">'
+    +   '<label>分配给谁 *</label>'
+    +   '<div class="chips">' + chips + '</div>'
+    +   '<div id="pubErr" class="err"></div>'
+    +   '<button class="btn primary block" style="margin-top:18px" onclick="publishTask()">发布任务</button>'
+    + '</div>'
+    + '<div id="taskList"></div>';
+  renderTaskList();
+}
+
+function toggleTarget(id, on){
+  if(on){ if(draft.targets.indexOf(id)<0) draft.targets.push(id); }
+  else{ draft.targets = draft.targets.filter(x=>x!==id); }
+}
+
+async function publishTask(){
+  const title = draft.title.trim();
+  if(!title) return setErr('pubErr', '请填写任务标题');
+  if(!draft.deadline) return setErr('pubErr', '请选择截止时间');
+  const dl = new Date(draft.deadline).getTime();
+  if(isNaN(dl)) return setErr('pubErr', '截止时间格式不正确');
+  if(dl <= Date.now()) return setErr('pubErr', '截止时间必须晚于当前时间');
+  if(!draft.targets.length) return setErr('pubErr', '请至少选择一位成员');
+
+  const targets = {};
+  draft.targets.forEach(rid => {
+    if(db.roles.some(r=>r.id===rid)) targets[rid] = { status:'active', doneAt:null };
+  });
+  if(!Object.keys(targets).length) return setErr('pubErr', '请至少选择一位有效成员');
+
+  db.tasks.push({
+    id: uid(),
+    title, desc: draft.desc.trim(),
+    deadline: dl,
+    reward: draft.reward.trim(),
+    penalty: draft.penalty.trim(),
+    createdAt: Date.now(),
+    targets
+  });
+  await saveDB();
+  draft = { title:'', desc:'', deadline: defaultDeadline(), reward:'', penalty:'', targets:[] };
+  renderTasksTab();
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+function renderTaskList(){
+  const el = document.getElementById('taskList');
+  if(!el) return;
+  if(!db.tasks.length){
+    el.innerHTML = '<div class="card empty" style="margin-top:16px">还没有发布任何任务</div>';
+    return;
+  }
+  const tasks = db.tasks.slice().sort((a,b)=>b.createdAt-a.createdAt);
+  let html = '<p class="sec-title">已发布任务（' + tasks.length + '）</p>';
+
+  tasks.forEach(t=>{
+    const rows = Object.keys(t.targets).map(rid=>{
+      const s = t.targets[rid];
+      const r = db.roles.find(x=>x.id===rid);
+      const nm = r ? (esc(r.emoji||'🙂') + ' ' + esc(r.name)) : '（成员已删除）';
+      const badge = s.status==='done'
+        ? '<span class="badge ok">已完成</span>'
+        : (s.status==='failed' ? '<span class="badge bad">失败 / 超时</span>' : '<span class="badge live">进行中</span>');
+      const btns = s.status==='active'
+        ? '<button class="btn sm" onclick="setTargetStatus(\''+t.id+'\',\''+rid+'\',\'done\')">标记完成</button>'
+          + '<button class="btn sm danger" onclick="setTargetStatus(\''+t.id+'\',\''+rid+'\',\'failed\')">判失败</button>'
+        : '<button class="btn sm ghost" onclick="setTargetStatus(\''+t.id+'\',\''+rid+'\',\'active\')">撤销</button>';
+      return '<div class="list-row"><div class="grow">' + nm + '</div>' + badge + btns + '</div>';
+    }).join('');
+
+    html += '<div class="card" style="margin-top:12px">'
+      + '<div class="task-head">'
+      +   '<h3>' + esc(t.title) + '</h3>'
+      +   '<button class="btn sm danger" onclick="removeTask(\''+t.id+'\')">删除</button>'
+      + '</div>'
+      + (t.desc ? '<p class="desc small">' + esc(t.desc) + '</p>' : '')
+      + '<div class="meta" style="margin-top:10px">'
+      +   '<span class="pill time">🕐 截止 ' + fmtDateTime(t.deadline) + '</span>'
+      +   (t.reward ? '<span class="pill reward">🎁 '+esc(t.reward)+'</span>' : '')
+      +   (t.penalty ? '<span class="pill penalty">⚡ '+esc(t.penalty)+'</span>' : '')
+      + '</div>'
+      + '<div class="targets">' + rows + '</div>'
+      + '</div>';
+  });
+  el.innerHTML = html;
+}
+
+async function setTargetStatus(tid, rid, status){
+  const t = db.tasks.find(x=>x.id===tid);
+  if(!t || !t.targets[rid]) return;
+  t.targets[rid].status = status;
+  t.targets[rid].doneAt = status==='done' ? Date.now() : null;
+  await saveDB();
+  renderTaskList();
+}
+
+async function removeTask(tid){
+  const t = db.tasks.find(x=>x.id===tid);
+  if(!t) return;
+  if(!confirm('删除任务「'+t.title+'」？此操作不可恢复')) return;
+  db.tasks = db.tasks.filter(x=>x.id!==tid);
+  await saveDB();
+  renderTaskList();
+}
+
+/* 成员 tab */
+function renderRolesTab(){
+  const body = document.getElementById('tabBody');
+  body.innerHTML = ''
+    + '<div class="card">'
+    +   '<h3 style="font-size:16.5px">添加成员</h3>'
+    +   '<div class="grid2">'
+    +     '<div><label>名字 *</label><input id="r-name" class="input" placeholder="例如：小明"></div>'
+    +     '<div><label>头像 emoji</label><input id="r-emoji" class="input" placeholder="😀" maxlength="4"></div>'
+    +   '</div>'
+    +   '<div id="roleErr" class="err"></div>'
+    +   '<button class="btn primary block" style="margin-top:18px" onclick="addRole()">添加成员</button>'
+    + '</div>'
+    + '<div class="card" style="margin-top:16px">'
+    +   '<h3 style="font-size:16.5px">成员列表</h3>'
+    +   '<div id="roleList" style="margin-top:8px"></div>'
+    + '</div>';
+  renderRoleList();
+}
+
+async function addRole(){
+  const name = val('r-name').trim();
+  const emoji = val('r-emoji').trim() || '🙂';
+  if(!name) return setErr('roleErr', '请输入名字');
+  if(db.roles.some(r=>r.name===name)) return setErr('roleErr', '这个名字已经存在了');
+  db.roles.push({ id: uid(), name, emoji, createdAt: Date.now() });
+  await saveDB();
+  const a = document.getElementById('r-name'); if(a) a.value='';
+  const b = document.getElementById('r-emoji'); if(b) b.value='';
+  setErr('roleErr','');
+  renderRoleList();
+}
+
+function renderRoleList(){
+  const el = document.getElementById('roleList');
+  if(!el) return;
+  if(!db.roles.length){
+    el.innerHTML = '<p class="small muted" style="padding:10px 0">还没有成员，先在上方添加吧</p>';
+    return;
+  }
+  el.innerHTML = db.roles.map(r=>{
+    const s = roleStats(r.id);
+    return '<div class="list-row">'
+      + '<span class="avatar sm">' + esc(r.emoji||'🙂') + '</span>'
+      + '<div class="grow"><div style="font-weight:700">' + esc(r.name) + '</div>'
+      + '<div class="small muted">进行中 '+s.active+' · 完成 '+s.done+' · 失败 '+s.failed+'</div></div>'
+      + '<button class="btn sm danger" onclick="removeRole(\''+r.id+'\')">删除</button>'
+      + '</div>';
+  }).join('');
+}
+
+async function removeRole(id){
+  const r = db.roles.find(x=>x.id===id);
+  if(!r) return;
+  const n = db.tasks.filter(t=>!!t.targets[id]).length;
+  let msg = '删除成员「'+r.name+'」？';
+  if(n) msg += '\n将同时移除他/她的 ' + n + ' 个任务分配。';
+  if(!confirm(msg)) return;
+  db.roles = db.roles.filter(x=>x.id!==id);
+  db.tasks.forEach(t=>delete t.targets[id]);
+  db.tasks = db.tasks.filter(t=>Object.keys(t.targets).length>0);
+  await saveDB();
+  renderRoleList();
+}
+
+/* 数据 tab */
+function renderDataTab(){
+  const body = document.getElementById('tabBody');
+  body.innerHTML = ''
+    + '<div class="card">'
+    +   '<h3 style="font-size:16.5px">数据同步</h3>'
+    +   '<p class="small muted" style="margin-top:8px;line-height:1.9">'
+    +     '数据存储在 Supabase 云端，所有人打开同一个网址看到的都是同一份内容。'
+    +     '你可以把网址直接发到微信群里。'
+    +   '</p>'
+    +   '<div class="row gap" style="margin-top:16px;flex-wrap:wrap">'
+    +     '<button class="btn" onclick="refresh()">↻ 重新拉取云端数据</button>'
+    +     '<button class="btn" onclick="exportData()">⬇ 导出备份</button>'
+    +   '</div>'
+    + '</div>'
+    + '<div class="card" style="margin-top:16px">'
+    +   '<h3 style="font-size:16.5px">修改密码</h3>'
+    +   '<label>当前密码</label><input id="oldP" type="password" class="input">'
+    +   '<label>新密码</label><input id="newP" type="password" class="input" placeholder="至少 4 位">'
+    +   '<div id="pwdErr" class="err"></div>'
+    +   '<button class="btn block" style="margin-top:16px" onclick="changePwd()">保存新密码</button>'
+    + '</div>'
+    + '<div class="card danger-zone" style="margin-top:16px">'
+    +   '<h3 style="font-size:16.5px;color:#fca5a5">危险操作</h3>'
+    +   '<p class="small muted" style="margin-top:8px">清空全部成员、任务和管理员账号（云端也会被清空）。</p>'
+    +   '<button class="btn danger" style="margin-top:14px" onclick="clearAll()">清空所有数据</button>'
+    + '</div>'
+    + '<p class="foot">任务契约 · 云端版</p>';
+}
+
+function exportData(){
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '任务契约-' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+async function changePwd(){
+  if(!db.admin) return;
+  const o = val('oldP'), n = val('newP');
+  if(hashPwd(o) !== db.admin.hash) return setErr('pwdErr', '当前密码不正确');
+  if(n.length < 4) return setErr('pwdErr', '新密码至少 4 位');
+  db.admin.hash = hashPwd(n);
+  await saveDB();
+  setErr('pwdErr','');
+  const a = document.getElementById('oldP'); if(a) a.value='';
+  const b = document.getElementById('newP'); if(b) b.value='';
+  alert('密码已更新');
+}
+
+async function clearAll(){
+  if(!confirm('确定要清空所有数据吗？（成员、任务、管理员账号都会删除）')) return;
+  if(!confirm('再次确认：此操作不可恢复！')) return;
+  db = { admin:null, roles:[], tasks:[] };
+  await saveDB();
+  isAdmin = false;
+  goHome();
+}
+
+/* ============ 倒计时 + 自动判超时 ============ */
+setInterval(()=>{
+  const nodes = document.querySelectorAll('[data-deadline]');
+  for(let i=0;i<nodes.length;i++){
+    const el = nodes[i];
+    if(el.dataset.status !== 'active') continue;
+    const dl = Number(el.dataset.deadline);
+    const ms = dl - Date.now();
+    el.textContent = ms>0 ? ('⏳ 剩余 '+remainText(ms)) : '⚠️ 已超时';
+    el.classList.toggle('urgent', ms>0 && ms<3600000);
+    el.classList.toggle('expired', ms<=0);
+  }
+
+  // 每 30 秒自动同步一次超时状态到云端
+  if(Date.now() % 30000 < 1000){
+    let changed = false;
+    db.tasks.forEach(t=>{
+      for(const rid in t.targets){
+        const s = t.targets[rid];
+        if(s.status==='active' && Date.now() > t.deadline){ s.status='failed'; changed=true; }
+      }
+    });
+    if(changed) saveDB().then(()=>{
+      if(view.name==='role') renderRole();
+      else if(view.name==='home') renderHome();
+    });
+  }
+}, 1000);
+
+/* ============ 启动 ============ */
+(async function init(){
+  try{
+    await loadDB();
+    render();
+  }catch(e){ /* 错误已在 loadDB 里显示 */ }
+})();
+</script>
+</body>
+</html>

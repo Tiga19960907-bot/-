@@ -125,6 +125,12 @@ textarea.input{resize:vertical;line-height:1.6}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+<script>
+window.addEventListener('error', function(e){
+  var el = document.getElementById('app');
+  if(el) el.innerHTML = '<div style="padding:30px;color:#fca5a5;font-size:14px;line-height:1.8">出错：' + (e.message || '未知错误') + '<br>文件：' + (e.filename || '') + '</div>';
+});
+</script>
 /* ============ 配置区：改成你自己的 ============ */
 const SUPABASE_URL = 'https://tsocuvathnjbyjgehebi.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzb2N1dmF0aG5qYnlqZ2VoZWJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAzNDkxMzksImV4cCI6MjEwNTkyNTEzOX0.0q5dy39r0ThJmPE400sDS8J07hOhw82TjiFb5UCvgmQ';

@@ -125,20 +125,13 @@ textarea.input{resize:vertical;line-height:1.6}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-<script>
-window.addEventListener('error', function(e){
-  var el = document.getElementById('app');
-  if(el) el.innerHTML = '<div style="padding:30px;color:#fca5a5;font-size:14px;line-height:1.8">出错：' + (e.message || '未知错误') + '<br>文件：' + (e.filename || '') + '</div>';
-});
-</script>
-/* ============ 配置区：改成你自己的 ============ */
+/* ============ 配置区 ============ */
 const SUPABASE_URL = 'https://tsocuvathnjbyjgehebi.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzb2N1dmF0aG5qYnlqZ2VoZWJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAzNDkxMzksImV4cCI6MjEwNTkyNTEzOX0.0q5dy39r0ThJmPE400sDS8J07hOhw82TjiFb5UCvgmQ';
-/* ============================================ */
+/* ================================= */
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* ============ 状态 ============ */
 let db = { admin:null, roles:[], tasks:[] };
 let ready = false;
 let isAdmin = false;
@@ -152,7 +145,6 @@ function defaultDeadline(){
   return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':00';
 }
 
-/* ============ 工具 ============ */
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function val(id){ const el=document.getElementById(id); return el?el.value:''; }
@@ -190,12 +182,9 @@ function roleStats(rid){
   return r;
 }
 
-/* ============ 数据层 ============ */
 async function loadDB(){
   try{
-    alert('1. 开始连接');
     const { data, error } = await supabase.from('taskcontract').select('data').eq('id',1).single();
-    alert('2. 返回结果：' + JSON.stringify({data: data, error: error}));
     if(error) throw error;
     const d = data && data.data ? data.data : {};
     db = {
@@ -205,7 +194,6 @@ async function loadDB(){
     };
     ready = true;
   }catch(e){
-    alert('3. 出错了：' + e.message);
     console.error(e);
     document.getElementById('app').innerHTML =
       '<div class="wrap"><div class="card empty">⚠️ 连接数据库失败<br><span class="small">' + esc(e.message) + '<br>请检查 SUPABASE_URL / SUPABASE_KEY 是否正确</span></div></div>';
@@ -224,7 +212,6 @@ async function saveDB(){
   }
 }
 
-/* ============ 渲染入口 ============ */
 const app = document.getElementById('app');
 function render(){
   if(!ready) return;
@@ -241,7 +228,6 @@ function openAdmin(){
   else openLogin();
 }
 
-/* ============ 首页 ============ */
 function renderHome(){
   view = { name:'home', roleId:null };
   const roles = db.roles;
@@ -280,7 +266,6 @@ async function refresh(){
   render();
 }
 
-/* ============ 成员任务页 ============ */
 function renderRole(){
   const r = db.roles.find(x=>x.id===view.roleId);
   if(!r){ goHome(); return; }
@@ -353,7 +338,6 @@ async function markDone(tid, rid){
   renderRole();
 }
 
-/* ============ 登录 / 注册（唯一管理员） ============ */
 function renderLogin(){
   view = { name:'login', roleId:null };
   const hasAdmin = !!db.admin;
@@ -386,7 +370,6 @@ async function doRegister(){
   if(p.length < 4) return setErr('err', '密码至少 4 位');
   if(p !== p2) return setErr('err', '两次输入的密码不一致');
 
-  // 重新拉一次，防止别人在你之前已经注册了
   await loadDB();
   if(db.admin) return setErr('err', '管理员已存在，无法重复注册');
 
@@ -415,7 +398,6 @@ async function doLogin(){
 
 function doLogout(){ isAdmin = false; goHome(); }
 
-/* ============ 管理面板 ============ */
 function renderAdmin(){
   if(!isAdmin){ openLogin(); return; }
   view = { name:'admin', roleId:null };
@@ -441,7 +423,7 @@ function renderAdmin(){
 function switchTab(t){
   adminTab = t;
   const tabs = document.querySelectorAll('.tab');
-  ['tasks','roles','data'].forEach((k,i)=>{ if(tabs[i]) tabs[i].className = 'tab ' + (t===k?'on':''); });
+  ['tasks','roles','data'].forEach((k,i)=>{ if(tabs[i]) tabs[i].className = 'tab ' + (t===k?'on':''); = });
   renderTab();
 }
 
@@ -451,13 +433,12 @@ function renderTab(){
   else renderDataTab();
 }
 
-/* 任务 tab */
 function renderTasksTab(){
   const body = document.getElementById('tabBody');
   const roles = db.roles;
   const chips = roles.length
     ? roles.map(r=>{
-        const on = draft.targets.indexOf(r.id) >= 0;
+        const on draft.targets.indexOf(r.id) >= 0;
         return '<label class="chip"><input type="checkbox" ' + (on?'checked':'') +
                ' onchange="toggleTarget(\''+r.id+'\',this.checked)"> ' +
                esc(r.emoji||'🙂') + ' ' + esc(r.name) + '</label>';
@@ -583,7 +564,6 @@ async function removeTask(tid){
   renderTaskList();
 }
 
-/* 成员 tab */
 function renderRolesTab(){
   const body = document.getElementById('tabBody');
   body.innerHTML = ''
@@ -648,7 +628,6 @@ async function removeRole(id){
   renderRoleList();
 }
 
-/* 数据 tab */
 function renderDataTab(){
   const body = document.getElementById('tabBody');
   body.innerHTML = ''
@@ -709,7 +688,6 @@ async function clearAll(){
   goHome();
 }
 
-/* ============ 倒计时 + 自动判超时 ============ */
 setInterval(()=>{
   const nodes = document.querySelectorAll('[data-deadline]');
   for(let i=0;i<nodes.length;i++){
@@ -722,7 +700,6 @@ setInterval(()=>{
     el.classList.toggle('expired', ms<=0);
   }
 
-  // 每 30 秒自动同步一次超时状态到云端
   if(Date.now() % 30000 < 1000){
     let changed = false;
     db.tasks.forEach(t=>{
@@ -738,12 +715,11 @@ setInterval(()=>{
   }
 }, 1000);
 
-/* ============ 启动 ============ */
 (async function init(){
   try{
     await loadDB();
     render();
-  }catch(e){ /* 错误已在 loadDB 里显示 */ }
+  }catch(e){}
 })();
 </script>
 </body>
